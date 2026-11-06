@@ -80,6 +80,30 @@
     tbody tr:hover { background: #f7faf9; }
     #status { margin: 1rem 0; color: #536873; }
     #status.error { color: #9c2c22; }
+    .chart {
+      margin: 0 0 1.5rem;
+      padding: 1.15rem 1.15rem .85rem;
+      border: 1px solid #dce5e7;
+      border-radius: .65rem;
+      background: #fff;
+      box-shadow: 0 8px 26px rgb(18 59 74 / 6%);
+    }
+    .chart h2 { margin: 0 0 .9rem; color: #425a65; font-size: .95rem; font-weight: 650; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(8rem, 14rem) 1fr 6rem;
+      gap: .75rem;
+      align-items: center;
+      padding: .3rem 0;
+    }
+    .bar-label { color: #172b3a; font-size: .9rem; text-align: right; overflow-wrap: anywhere; }
+    .bar-track { height: 1.05rem; overflow: hidden; border-radius: .25rem; background: #edf3f3; }
+    .bar { height: 100%; border-radius: .25rem; background: #2f7f78; }
+    .bar-value { color: #425a65; font-size: .9rem; font-variant-numeric: tabular-nums; text-align: right; }
+    @media (max-width: 36rem) {
+      .bar-row { grid-template-columns: 1fr 5.5rem; gap: .25rem .6rem; }
+      .bar-label { grid-column: 1 / -1; text-align: left; }
+    }
     footer { padding: 1.5rem 0 2.5rem; border-top: 1px solid #dce5e7; color: #536873; font-size: .85rem; line-height: 1.6; }
     footer p { margin: .25rem 0; }
     @media (max-width: 36rem) {
@@ -104,6 +128,10 @@
     </section>
     <p class="rule"><strong>Price rule:</strong> Sales under $10,000 are excluded. The median for each city is calculated from the remaining sale prices.</p>
     <p id="status" role="status" aria-live="polite">Loading sale data…</p>
+    <section class="chart" aria-labelledby="chart-title">
+      <h2 id="chart-title">Median sale price by city, highest to lowest</h2>
+      <div id="bars"></div>
+    </section>
     <div class="table-wrap">
       <table>
         <caption>Median sale price by city and state</caption>
@@ -236,6 +264,29 @@
           fragment.append(row);
         });
         body.replaceChildren(fragment);
+
+        const maxPrice = Math.max(...cities.map((city) => city.price));
+        const bars = document.getElementById("bars");
+        const barFragment = document.createDocumentFragment();
+        cities.forEach((city) => {
+          const row = document.createElement("div");
+          row.className = "bar-row";
+          const label = document.createElement("span");
+          label.className = "bar-label";
+          label.textContent = city.name;
+          const track = document.createElement("div");
+          track.className = "bar-track";
+          const bar = document.createElement("div");
+          bar.className = "bar";
+          bar.style.width = `${(city.price / maxPrice) * 100}%`;
+          track.append(bar);
+          const value = document.createElement("span");
+          value.className = "bar-value";
+          value.textContent = currency.format(city.price);
+          row.append(label, track, value);
+          barFragment.append(row);
+        });
+        bars.replaceChildren(barFragment);
         document.getElementById("city-count").textContent = number.format(cities.length);
         document.getElementById("sale-count").textContent = number.format(includedSales);
         status.textContent = `Showing ${number.format(cities.length)} cities, ranked by median price.`;
